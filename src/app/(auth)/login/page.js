@@ -2,18 +2,42 @@
 import Link from "next/link";
 import { useForm } from "react-hook-form";
 import { REGISTER_ROUTE } from "@/constants/routes";
-import { loginUser } from "@/api/auth";
+import { login } from "@/api/auth";
+import PasswordInput from "@/components/PasswordInput";
+import useAuthStore from "@/stores/authStote";
+import { useState } from "react";
+import Spinner from "@/components/Spinner";
+import { toast } from "react-toastify";
+
+
 
 const LoginPage = () => {
   const { register, handleSubmit } = useForm();
+  const [loading, setLoading] = useState(false);
+  const { loginUser } = useAuthStore.getState();
+
   function submitForm(data) {
+    setLoading(true);
+
     console.log("Login data:", data);
 
-    loginUser(data).then((response) => {
-      console.log(response);
-    }).catch((error) => {
-      console.error(error);
-    });
+    login(data)
+      .then((response) => {
+        console.log("Login response:", response);
+        loginUser({ user: response.user });
+        toast.success("Login successful!");
+      })
+      .catch((error) => {
+        console.error("Login error:", error);
+
+        toast.error(
+          error.response?.data?.error ||
+          "Login failed. Please try again."
+        );
+      })
+      .finally(() => {
+        setLoading(false);
+      });
   }
   return (
     <section className="min-h-screen bg-white flex items-center justify-center px-4 py-8">
@@ -182,24 +206,8 @@ const LoginPage = () => {
                 Password
               </label>
 
-              <input
-                type="password"
+              <PasswordInput
                 id="password"
-                placeholder="••••••••"
-                required
-                className="
-                  w-full
-                  p-3
-                  bg-white
-                  border border-gray-300
-                  text-gray-900
-                  text-sm
-                  rounded-lg
-                  outline-none
-                  focus:ring-2
-                  focus:ring-blue-500
-                  focus:border-blue-500
-                "
                 {...register("password")}
               />
             </div>
@@ -229,21 +237,34 @@ const LoginPage = () => {
             {/* Sign In */}
             <button
               type="submit"
+              disabled={loading}
               className="
-                w-full
-                text-white
-                bg-blue-600
-                hover:bg-blue-700
-                active:bg-blue-800
-                font-medium
-                rounded-lg
-                text-sm
-                px-5
-                py-3
-                transition
-              "
+    w-full
+    h-12
+    text-white
+    bg-blue-600
+    hover:bg-blue-700
+    active:bg-blue-800
+    disabled:bg-blue-400
+    font-medium
+    rounded-lg
+    text-sm
+    px-5
+    transition
+    flex
+    items-center
+    justify-center
+    gap-2
+  "
             >
-              Sign in
+              {loading ? (
+                <>
+                  <Spinner />
+                  Signing in...
+                </>
+              ) : (
+                "Sign in"
+              )}
             </button>
 
           </form>

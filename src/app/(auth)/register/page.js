@@ -1,23 +1,44 @@
 "use client";
 
 import { useForm } from "react-hook-form";
-import { signupUser } from "@/api/auth";
+import { signup } from "@/api/auth";
 import Link from "next/link";
+import PasswordInput from "@/components/PasswordInput";
+import authStore from "@/stores/authStote";
+import { toast } from "react-toastify";
+import { useState } from "react";
+import Spinner from "@/components/Spinner";
 
 const RegisterPage = () => {
 
     const { register, handleSubmit } = useForm();
+    const { signupUser } = authStore.getState();
+    const [loading, setLoading] = useState(false);
 
     function submitForm(data) {
-        console.log("Signup data:", data);
+        setLoading(true);
 
-        signupUser(data)
+        signup(data)
             .then((response) => {
-                console.log(response);
+                signupUser({ user: response.user });
+                toast.success("Register successful!");
             })
             .catch((error) => {
-                console.error(error);
-            });
+                console.error("Register error:", error);
+
+                const errors = error.response?.data?.errors;
+
+                if (errors?.length > 0) {
+                    errors.forEach((err) => {
+                        toast.error(err.message);
+                    });
+                } else {
+                    toast.error(
+                        error.response?.data?.message ||
+                        "Register failed. Please try again."
+                    );
+                }
+            })
     }
 
     return (
@@ -290,24 +311,9 @@ const RegisterPage = () => {
                         Password
                     </label>
 
-                    <input
-                        type="password"
+                    <PasswordInput
                         id="password"
-                        placeholder="••••••••"
                         {...register("password")}
-                        required
-                        className="
-              w-full h-11
-              px-3
-              bg-gray-50
-              border border-gray-300
-              text-gray-900
-              text-sm
-              rounded-lg
-              outline-none
-              focus:ring-2
-              focus:ring-blue-500
-            "
                     />
 
                 </div>
@@ -377,19 +383,35 @@ const RegisterPage = () => {
                 {/* Create Account */}
                 <button
                     type="submit"
+                    disabled={loading}
                     className="
-            w-full
-            h-11
-            bg-blue-600
-            hover:bg-blue-700
-            text-white
-            rounded-lg
-            text-sm
-            font-medium
-            transition
-          "
+    w-full
+    h-12
+    text-white
+    bg-blue-600
+    hover:bg-blue-700
+    active:bg-blue-800
+    disabled:bg-blue-400
+    disabled:cursor-not-allowed
+    font-medium
+    rounded-lg
+    text-sm
+    px-5
+    transition
+    flex
+    items-center
+    justify-center
+    gap-2
+  "
                 >
-                    Create Account
+                    {loading ? (
+                        <>
+                            <Spinner />
+                            Creating Account...
+                        </>
+                    ) : (
+                        "Create Account"
+                    )}
                 </button>
 
             </form>
