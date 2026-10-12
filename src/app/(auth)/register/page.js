@@ -1,493 +1,311 @@
+
 "use client";
 
-import { useForm } from "react-hook-form";
 import { signup } from "@/api/auth";
-import Link from "next/link";
-import PasswordInput from "@/components/PasswordInput";
-import authStore from "@/stores/authStote";
-import { toast } from "react-toastify";
-import { useState } from "react";
 import Spinner from "@/components/Spinner";
+import PasswordInput from "@/components/PasswordInput";
+import { HOME_ROUTE } from "@/constants/routes";
+import useAuthStore from "@/stores/authStote";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { useState } from "react";
+import { useForm } from "react-hook-form";
+import { toast } from "react-toastify";
 
 const RegisterPage = () => {
+    const {
+        register,
+        handleSubmit,
+        reset,
+        formState: { errors },
+    } = useForm();
 
-    const { register, handleSubmit } = useForm();
-    const { signupUser } = authStore.getState();
+    const registerUser = useAuthStore(
+        (state) => state.registerUser
+    );
+
     const [loading, setLoading] = useState(false);
+    const router = useRouter();
 
-    function submitForm(data) {
-        setLoading(true);
+    const submitForm = async (data) => {
+        try {
+            setLoading(true);
 
-        signup(data)
-            .then((response) => {
-                signupUser({ user: response.user });
-                toast.success("Register successful!");
-            })
-            .catch((error) => {
-                console.error("Register error:", error);
+            const payload = {
+                name: data.name,
+                email: data.email,
+                password: data.password,
+                phone: data.phone,
+                address: [
+                    {
+                        street: data.street,
+                        city: data.city,
+                        province: data.province,
+                        country: data.country,
+                        district: data.district,
+                    },
+                ],
+            };
 
-                const errors = error.response?.data?.errors;
+            const response = await signup(payload);
 
-                if (errors?.length > 0) {
-                    errors.forEach((err) => {
-                        toast.error(err.message);
-                    });
-                } else {
-                    toast.error(
-                        error.response?.data?.message ||
-                        "Register failed. Please try again."
-                    );
-                }
-            })
-    }
+            registerUser({
+                user: response.data.user,
+            });
+
+            toast.success(
+                response.data.message || "Registration successful!"
+            );
+
+            reset();
+            router.replace(HOME_ROUTE);
+
+        } catch (error) {
+            const response = error.response?.data;
+            if (Array.isArray(response?.errors) && response.errors.length > 0) {
+                response.errors.forEach((err) => {
+                    toast.error(err.message || String(err));
+                });
+            } else {
+                toast.error(
+                    response?.message ||
+                    response?.error ||
+                    "Registration failed!"
+                );
+            }
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const inputClass =
+        "w-full rounded-lg border border-gray-300 px-4 py-3 outline-none transition focus:border-blue-600 focus:ring-2 focus:ring-blue-100";
+
+    const labelClass =
+        "mb-2 block text-sm font-medium text-gray-700";
 
     return (
-        <div className="space-y-6">
-
-            {/* Title */}
-            <div className="text-center">
-                <h1 className="text-2xl font-bold text-gray-900">
-                    Create an account
+        <div className="flex min-h-screen items-center justify-center bg-gray-50 px-4 py-10">
+            <div className="w-full max-w-2xl rounded-2xl bg-white p-6 shadow-sm sm:p-10">
+                <h1 className="text-center text-3xl font-bold text-gray-900">
+                    Create Account
                 </h1>
-            </div>
 
+                <p className="mt-2 text-center text-gray-500">
+                    Join Nepal Shops and start shopping today.
+                </p>
 
-            {/* OR Divider */}
-            <div className="flex items-center gap-3">
-
-                <div className="h-px bg-gray-300 flex-1" />
-
-                <span className="text-sm text-gray-400">
-                    OR
-                </span>
-
-                <div className="h-px bg-gray-300 flex-1" />
-
-            </div>
-
-
-            {/* Form */}
-            <form
-                onSubmit={handleSubmit(submitForm)}
-                className="space-y-4"
-            >
-
-                {/* Name */}
-                <div>
-                    <label
-                        htmlFor="name"
-                        className="block mb-2 text-sm font-medium text-gray-900"
-                    >
-                        Your name
-                    </label>
-
-                    <input
-                        type="text"
-                        id="name"
-                        placeholder="John Doe"
-                        {...register("name")}
-                        required
-                        className="
-              w-full h-11
-              px-3
-              bg-gray-50
-              border border-gray-300
-              text-gray-900
-              text-sm
-              rounded-lg
-              outline-none
-              focus:ring-2
-              focus:ring-blue-500
-              focus:border-blue-500
-            "
-                    />
-                </div>
-
-
-                {/* Address */}
-                <div>
-
-                    <h2 className="text-sm font-semibold text-gray-900 mb-3">
-                        Address
-                    </h2>
-
-
-                    {/* Province */}
-                    <div className="mb-3">
-
-                        <label
-                            htmlFor="province"
-                            className="block mb-2 text-sm font-medium text-gray-900"
-                        >
-                            Province
-                        </label>
-
-                        <select
-                            id="province"
-                            {...register("address.0.province")}
-                            required
-                            className="
-                w-full h-11
-                px-3
-                bg-gray-50
-                border border-gray-300
-                text-gray-900
-                text-sm
-                rounded-lg
-                outline-none
-                focus:ring-2
-                focus:ring-blue-500
-              "
-                        >
-                            <option value="">Select Province</option>
-                            <option value="koshi">Koshi</option>
-                            <option value="madhesh">Madhesh</option>
-                            <option value="bagmati">Bagmati</option>
-                            <option value="gandaki">Gandaki</option>
-                            <option value="lumbini">Lumbini</option>
-                            <option value="karnali">Karnali</option>
-                            <option value="sudurpashchim">
-                                Sudurpashchim
-                            </option>
-                        </select>
-
+                <form
+                    onSubmit={handleSubmit(submitForm)}
+                    className="mt-8 space-y-5"
+                >
+                    {/* Name */}
+                    <div>
+                        <label className={labelClass}>Full Name</label>
+                        <input
+                            type="text"
+                            placeholder="Enter your full name"
+                            className={inputClass}
+                            {...register("name", {
+                                required: "Name is required",
+                                minLength: {
+                                    value: 3,
+                                    message: "Name must be at least 3 characters",
+                                },
+                            })}
+                        />
+                        {errors.name && (
+                            <p className="mt-1 text-sm text-red-500">
+                                {errors.name.message}
+                            </p>
+                        )}
                     </div>
 
-
-                    {/* District */}
-                    <div className="mb-3">
-
-                        <label
-                            htmlFor="district"
-                            className="block mb-2 text-sm font-medium text-gray-900"
-                        >
-                            District
-                        </label>
-
-                        <select
-                            id="district"
-                            {...register("address.0.district")}
-                            required
-                            className="
-                w-full h-11
-                px-3
-                bg-gray-50
-                border border-gray-300
-                text-gray-900
-                text-sm
-                rounded-lg
-                outline-none
-                focus:ring-2
-                focus:ring-blue-500
-              "
-                        >
-                            <option value="">Select District</option>
-                            <option value="darchula">Darchula</option>
-                            <option value="kailali">Kailali</option>
-                            <option value="kanchanpur">Kanchanpur</option>
-                            <option value="dadeldhura">Dadeldhura</option>
-                            <option value="baitadi">Baitadi</option>
-                            <option value="bajura">Bajura</option>
-                            <option value="bajhang">Bajhang</option>
-                            <option value="achham">Achham</option>
-                            <option value="doti">Doti</option>
-                        </select>
-
+                    {/* Email */}
+                    <div>
+                        <label className={labelClass}>Email</label>
+                        <input
+                            type="email"
+                            placeholder="example@gmail.com"
+                            className={inputClass}
+                            {...register("email", {
+                                required: "Email is required",
+                            })}
+                        />
+                        {errors.email && (
+                            <p className="mt-1 text-sm text-red-500">
+                                {errors.email.message}
+                            </p>
+                        )}
                     </div>
 
-
-                    {/* City */}
-                    <div className="mb-3">
-
-                        <label
-                            htmlFor="city"
-                            className="block mb-2 text-sm font-medium text-gray-900"
-                        >
-                            City
-                        </label>
-
-                        <select
-                            id="city"
-                            {...register("address.0.city")}
-                            required
-                            className="
-                w-full h-11
-                px-3
-                bg-gray-50
-                border border-gray-300
-                text-gray-900
-                text-sm
-                rounded-lg
-                outline-none
-                focus:ring-2
-                focus:ring-blue-500
-              "
-                        >
-                            <option value="">Select City</option>
-                            <option value="darchula">Darchula</option>
-                            <option value="mahakali">Mahakali</option>
-                            <option value="lecam">Lecam</option>
-                            <option value="malikarjun">Malikarjun</option>
-                        </select>
-
+                    {/* Phone */}
+                    <div>
+                        <label className={labelClass}>Phone Number</label>
+                        <input
+                            type="tel"
+                            placeholder="98XXXXXXXX"
+                            className={inputClass}
+                            {...register("phone", {
+                                required: "Phone number is required",
+                            })}
+                        />
+                        {errors.phone && (
+                            <p className="mt-1 text-sm text-red-500">
+                                {errors.phone.message}
+                            </p>
+                        )}
                     </div>
-
 
                     {/* Street */}
                     <div>
-
-                        <label
-                            htmlFor="street"
-                            className="block mb-2 text-sm font-medium text-gray-900"
-                        >
-                            Street
-                        </label>
-
+                        <label className={labelClass}>Street Address</label>
                         <input
                             type="text"
-                            id="street"
-                            placeholder="Bakalbaj"
-                            {...register("address.0.street")}
-                            required
-                            className="
-                w-full h-11
-                px-3
-                bg-gray-50
-                border border-gray-300
-                text-gray-900
-                text-sm
-                rounded-lg
-                outline-none
-                focus:ring-2
-                focus:ring-blue-500
-              "
+                            placeholder="House number, street, ward"
+                            className={inputClass}
+                            {...register("street", {
+                                required: "Street address is required",
+                            })}
                         />
-
+                        {errors.street && (
+                            <p className="mt-1 text-sm text-red-500">
+                                {errors.street.message}
+                            </p>
+                        )}
                     </div>
 
-                </div>
+                    {/* District and City */}
+                    <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
+                        <div>
+                            <label className={labelClass}>District</label>
+                            <input
+                                type="text"
+                                placeholder="Enter district"
+                                className={inputClass}
+                                {...register("district", {
+                                    required: "District is required",
+                                })}
+                            />
+                            {errors.district && (
+                                <p className="mt-1 text-sm text-red-500">
+                                    {errors.district.message}
+                                </p>
+                            )}
+                        </div>
 
+                        <div>
+                            <label className={labelClass}>City</label>
+                            <input
+                                type="text"
+                                placeholder="Enter city"
+                                className={inputClass}
+                                {...register("city", {
+                                    required: "City is required",
+                                })}
+                            />
+                            {errors.city && (
+                                <p className="mt-1 text-sm text-red-500">
+                                    {errors.city.message}
+                                </p>
+                            )}
+                        </div>
+                    </div>
 
-                {/* Email */}
-                <div>
-
-                    <label
-                        htmlFor="email"
-                        className="block mb-2 text-sm font-medium text-gray-900"
-                    >
-                        Your email
-                    </label>
-
-                    <input
-                        type="email"
-                        id="email"
-                        placeholder="name@company.com"
-                        {...register("email")}
-                        required
-                        className="
-              w-full h-11
-              px-3
-              bg-gray-50
-              border border-gray-300
-              text-gray-900
-              text-sm
-              rounded-lg
-              outline-none
-              focus:ring-2
-              focus:ring-blue-500
-            "
-                    />
-
-                </div>
-
-
-                {/* Password */}
-                <div>
-
-                    <label
-                        htmlFor="password"
-                        className="block mb-2 text-sm font-medium text-gray-900"
-                    >
-                        Password
-                    </label>
-
-                    <PasswordInput
-                        id="password"
-                        {...register("password")}
-                    />
-
-                </div>
-
-
-                {/* Phone */}
-                <div>
-
-                    <label
-                        htmlFor="phone"
-                        className="block mb-2 text-sm font-medium text-gray-900"
-                    >
-                        Phone number
-                    </label>
-
-                    <input
-                        type="tel"
-                        id="phone"
-                        placeholder="98XXXXXXXX"
-                        {...register("phone")}
-                        required
-                        className="
-              w-full h-11
-              px-3
-              bg-gray-50
-              border border-gray-300
-              text-gray-900
-              text-sm
-              rounded-lg
-              outline-none
-              focus:ring-2
-              focus:ring-blue-500
-            "
-                    />
-
-                </div>
-
-
-                {/* Terms */}
-                <div className="flex items-start gap-2">
-
-                    <input
-                        id="terms"
-                        type="checkbox"
-                        required
-                        className="mt-1 w-4 h-4"
-                    />
-
-                    <label
-                        htmlFor="terms"
-                        className="text-sm text-gray-500"
-                    >
-                        I accept the{" "}
-
-                        <Link
-                            href="/terms"
-                            className="font-medium text-blue-600 hover:underline"
+                    {/* Province */}
+                    <div>
+                        <label className={labelClass}>Province</label>
+                        <select
+                            className={inputClass}
+                            defaultValue=""
+                            {...register("province", {
+                                required: "Please select a province",
+                            })}
                         >
-                            Terms and Conditions
-                        </Link>
+                            <option value="" disabled>
+                                Select Province
+                            </option>
+                            <option value="Koshi">Koshi</option>
+                            <option value="Madhesh">Madhesh</option>
+                            <option value="Bagmati">Bagmati</option>
+                            <option value="Gandaki">Gandaki</option>
+                            <option value="Lumbini">Lumbini</option>
+                            <option value="Karnali">Karnali</option>
+                            <option value="Sudurpashchim">
+                                Sudurpashchim
+                            </option>
+                        </select>
+                        {errors.province && (
+                            <p className="mt-1 text-sm text-red-500">
+                                {errors.province.message}
+                            </p>
+                        )}
+                    </div>
 
-                    </label>
+                    {/* Country */}
+                    <div>
+                        <label className={labelClass}>Country</label>
+                        <select
+                            className={inputClass}
+                            {...register("country", {
+                                required: "Please select a country",
+                            })}
+                        >
+                            <option value="Nepal">Nepal</option>
+                            <option value="India">India</option>
+                            <option value="China">China</option>
+                            <option value="Bhutan">Bhutan</option>
+                        </select>
+                    </div>
 
-                </div>
+                    {/* Password */}
+                    <div>
+                        <label className={labelClass}>Password</label>
+                        <PasswordInput
+                            {...register("password", {
+                                required: "Password is required",
+                                minLength: {
+                                    value: 8,
+                                    message:
+                                        "Password must be at least 8 characters",
+                                },
+                            })}
+                        />
+                        {errors.password && (
+                            <p className="mt-1 text-sm text-red-500">
+                                {errors.password.message}
+                            </p>
+                        )}
+                    </div>
 
+                    {/* Submit */}
+                    <button
+                        type="submit"
+                        disabled={loading}
+                        className="flex w-full items-center justify-center gap-2 rounded-lg bg-blue-600 px-4 py-3 font-semibold text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-60"
+                    >
+                        {loading && <Spinner />}
+                        <span>
+                            {loading
+                                ? "Creating Account..."
+                                : "Create Account"}
+                        </span>
+                    </button>
+                </form>
 
-                {/* Create Account */}
-                <button
-                    type="submit"
-                    disabled={loading}
-                    className="
-    w-full
-    h-12
-    text-white
-    bg-blue-600
-    hover:bg-blue-700
-    active:bg-blue-800
-    disabled:bg-blue-400
-    disabled:cursor-not-allowed
-    font-medium
-    rounded-lg
-    text-sm
-    px-5
-    transition
-    flex
-    items-center
-    justify-center
-    gap-2
-  "
-                >
-                    {loading ? (
-                        <>
-                            <Spinner />
-                            Creating Account...
-                        </>
-                    ) : (
-                        "Create Account"
-                    )}
-                </button>
-
-            </form>
-
-
-            {/* Login */}
-            <div className="flex items-center gap-3">
-
-                <div className="h-px bg-gray-200 flex-1" />
-
-                <p className="text-sm text-gray-500 whitespace-nowrap">
+                <p className="mt-6 text-center text-sm text-gray-600">
                     Already have an account?{" "}
-
                     <Link
                         href="/login"
-                        className="font-medium text-blue-600 hover:underline"
+                        className="font-semibold text-blue-600 hover:underline"
                     >
                         Login
                     </Link>
                 </p>
-
-                <div className="h-px bg-gray-200 flex-1" />
-
             </div>
-
-
-            {/* Social Buttons */}
-            <div className="flex flex-col sm:flex-row gap-3">
-
-                <button
-                    type="button"
-                    className="
-            flex-1
-            h-11
-            border border-gray-300
-            rounded-lg
-            bg-white
-            text-sm
-            text-gray-700
-            hover:bg-gray-50
-            flex items-center justify-center gap-2
-          "
-                >
-                    <span className="font-bold text-red-500">
-                        G
-                    </span>
-
-                    Continue with Google
-                </button>
-
-
-                <button
-                    type="button"
-                    className="
-            flex-1
-            h-11
-            border border-gray-300
-            rounded-lg
-            bg-white
-            text-sm
-            text-gray-700
-            hover:bg-gray-50
-            flex items-center justify-center gap-2
-          "
-                >
-                    <span className="text-lg">
-                        
-                    </span>
-
-                    Continue with Apple
-                </button>
-
-            </div>
-
         </div>
     );
 };
 
 export default RegisterPage;
+
