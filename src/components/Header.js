@@ -1,7 +1,21 @@
+
+"use client";
 import { navMenu } from "@/constants/routes";
 import Link from "next/link";
-
+import useAuthStore from "@/stores/authStote";
+import { useEffect } from "react";
+import { useRouter } from "next/navigation";
+import { LOGIN_ROUTE } from "@/constants/routes";
 const Header = () => {
+    const router = useRouter();
+    const { isAuthenticated, logout } = useAuthStore.getState();
+    function handleLogout() {
+        logout();
+        router.push(LOGIN_ROUTE);
+    }
+    useEffect(() => {
+    }, [isAuthenticated]);
+
     return (
         <header>
             <nav className="fixed top-0 left-0 z-50 w-full bg-white border-b border-gray-200">
@@ -10,9 +24,7 @@ const Header = () => {
                     {/* Logo */}
                     <Link href="/" className="flex items-center gap-2">
                         <div className="w-9 h-9 bg-blue-600 rounded-lg flex items-center justify-center">
-                            <span className="text-white font-bold">
-                                N
-                            </span>
+                            <span className="text-white font-bold">N</span>
                         </div>
 
                         <span className="text-xl font-bold text-gray-900">
@@ -34,22 +46,31 @@ const Header = () => {
                     </div>
 
                     {/* Authentication */}
-                    <div className="hidden md:flex items-center gap-4">
-                        <Link
-                            href="/login"
-                            className="text-gray-700 font-medium hover:text-blue-600"
-                        >
-                            Login
-                        </Link>
-
-                        <Link
-                            href="/register"
+                    {isAuthenticated ? (
+                        <button
+                            type="button"
                             className="px-5 py-2.5 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition"
+                            onClick={handleLogout}
                         >
-                            Register
-                        </Link>
-                    </div>
+                            Logout
+                        </button>
+                    ) : (
+                        <div className="hidden md:flex items-center gap-4">
+                            <Link
+                                href="/login"
+                                className="text-gray-700 font-medium hover:text-blue-600"
+                            >
+                                Login
+                            </Link>
 
+                            <Link
+                                href="/register"
+                                className="px-5 py-2.5 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition"
+                            >
+                                Register
+                            </Link>
+                        </div>
+                    )}
                 </div>
             </nav>
         </header>
@@ -57,4 +78,3 @@ const Header = () => {
 };
 
 export default Header;
-

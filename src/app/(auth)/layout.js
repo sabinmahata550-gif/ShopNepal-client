@@ -1,6 +1,21 @@
-import React from "react";
+"use client";
+import { useRouter } from "next/navigation";
+import useAuthStore from "@/stores/authStote";
+import { useEffect } from "react";
+import { HOME_ROUTE } from "@/constants/routes";
+const authLayout = ({ children }) => {
+  const { isAuthenticated } = useAuthStore.getState();
 
-const Layout = ({ children }) => {
+  const router = useRouter();
+  useEffect(() => {
+
+    if (isAuthenticated) {
+      router.push(HOME_ROUTE);
+    }
+
+  }, [])
+
+  if (isAuthenticated) return;
   return (
     <main className=" bg-gray-50 flex items-center justify-center p-4">
 
@@ -36,4 +51,4 @@ const Layout = ({ children }) => {
   );
 };
 
-export default Layout;
+export default authLayout;

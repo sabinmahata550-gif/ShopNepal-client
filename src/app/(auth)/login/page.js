@@ -34,7 +34,6 @@ const LoginPage = () => {
 
       const response = await login(data);
 
-      console.log("Login response:", response.data);
 
       // Save the logged-in user in Zustand
       loginUser({
@@ -50,11 +49,7 @@ const LoginPage = () => {
     } catch (error) {
       const response = error.response?.data;
 
-      console.error(
-        "Login error:",
-        response || error.message
-      );
-
+   
       toast.error(
         response?.message ||
         response?.error ||
