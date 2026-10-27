@@ -28,37 +28,43 @@ const LoginPage = () => {
   const [loading, setLoading] = useState(false);
   const router = useRouter();
 
+
+
+  // Save the logged-in user in Zustand
+
+
   const submitForm = async (data) => {
     try {
       setLoading(true);
 
       const response = await login(data);
 
+      const { user, token, message } = response.data;
 
-      // Save the logged-in user in Zustand
+      // Save user and token in Zustand
       loginUser({
-        user: response.data.user,
+        user,
+        token,
       });
 
-      toast.success(
-        response.data.message || "Login successful!"
-      );
+      toast.success(message || "Login successful!");
 
       reset();
       router.replace(HOME_ROUTE);
     } catch (error) {
-      const response = error.response?.data;
+      const errorResponse = error.response?.data;
 
-   
       toast.error(
-        response?.message ||
-        response?.error ||
+        errorResponse?.message ||
+        errorResponse?.error ||
         "Login failed. Please try again."
       );
     } finally {
       setLoading(false);
     }
   };
+
+
 
   const inputClass =
     "w-full rounded-lg border border-gray-300 bg-white p-3 text-sm text-gray-900 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100";
